@@ -59,8 +59,8 @@
 
     <div class='article'>
         <div class="content-title">
-            <a href="https://kuikui.tech/fluent-python-01.html"><h1>流畅的python-数据模型</h1></a>
-Fri 12 June 2020
+            <a href="https://kuikui.tech/fluent-python-02.html"><h1>流畅的python-序列结构</h1></a>
+Sat 13 June 2020
 
 by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
@@ -69,14 +69,39 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
         </div>
         
-        <div><p>python语言的品质是一致性，在理解了python的设计之后我们可以很快推测出类似的语法的使用方法，我个人认为python的语法是十分简单的，适合作为一门爱好教授给初学者。</p>
-<p>回到正题，什么是python的数据模型呢？所谓python的数据模型就是对python框架的描述，而python程序的数据都是由对象和对象的关系组成，实际使用者的直观感受就是各种内置的API接口，例如序列，迭代器，函数，类和上下文管理器等等。</p>
-<p>了解python的数据模型有什么用呢，在特殊方法的帮助下，它可以使你实例化的对象实现和支持python本身的一些语言架构，并与之交互。</p>
-<p>这些架构包括：迭代，集合类，属性访问，运算符重载，函数和方法的调用，对象的创建和销毁，以及字符串表示形式和格式化以及管理上下文。</p>
-<p>合理的使用特殊方法我们可以使得自己构建的类实例化的对象具有十分高的可操作性，打造pythonic的编程风格。</p></div>
+        <div><p>对于处理序列数据，无论是哪种数据结构，他们共用一套丰富的操作：迭代，切片，排序，还有拼接。</p>
+<p>python标准库用C实现了丰富的序列类型：
+容器序列: list、tuple以及collection.deque可以存放不同的类型的数据。
+扁平序列：str、bytes以及bytearray,memmoryview和array.array，这类序列只能容纳一种类型。
+容器序列存放的是他们包含的任意类型的对象的引用，而扁平序列存放的是值而不是引用。
+可变序列：list, bytearray, array.array, collections.deque和memoryview
+不可变序列: tuple, str 和 bytes</p>
+<p>列表推导：a = [b for b in b]  python2中会修改b的值为b[-1], 而python3的局部作用域不会。
+生成笛卡尔积的eg: a = [(b,c) for b in b for c in c]
+生成器表达式: tuple(), 生成器表达式逐个产出元素，不会一次性产出多个列表。</p>
+<p>Python sort的原理：非数字的字符排序: key = str.lower / key = len，bisect和insort使用二分查找有序序列来查找和插入。
+这章好无聊。。。。。。。。。。。。。</p></div>
         <hr />
     </div>
 		
+
+ 
+        
+
+ 
+
+    <div class='article'>
+        <a href="https://kuikui.tech/fluent-python-01.html"><h2>流畅的python-数据模型</h2></a>
+        <div class= "well small"> Fri 12 June 2020
+
+by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
+ 
+
+
+ </div>
+        <div class="summary"><p>python语言的品质是一致性，在理解了python的设计之后我们可以很快推测出类似的语法的使用方法，我个人认为python的语法是十分简单的，适合作为一门爱好教授给初学者。</p> <a class="btn btn-info xsmall" href="https://kuikui.tech/fluent-python-01.html">read more</a></div>
+    </div>	
+				
 
  
         

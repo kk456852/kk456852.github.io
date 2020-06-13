@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>kizzy的个人博客</title><link href="https://kuikui.tech/" rel="alternate"></link><link href="https://kuikui.tech/feeds/all.atom.xml" rel="self"></link><id>https://kuikui.tech/</id><updated>2020-06-12T02:17:27+08:00</updated><entry><title>流畅的python-数据模型</title><link href="https://kuikui.tech/fluent-python-01.html" rel="alternate"></link><published>2020-06-12T02:17:24+08:00</published><updated>2020-06-12T02:17:27+08:00</updated><author><name>kizzy</name></author><id>tag:kuikui.tech,2020-06-12:/fluent-python-01.html</id><summary type="html">&lt;p&gt;python语言的品质是一致性，在理解了python的设计之后我们可以很快推测出类似的语法的使用方法，我个人认为python的语法是十分简单的，适合作为一门爱好教授给初学者。&lt;/p&gt;</summary><content type="html">&lt;p&gt;python语言的品质是一致性，在理解了python的设计之后我们可以很快推测出类似的语法的使用方法，我个人认为python的语法是十分简单的，适合作为一门爱好教授给初学者。&lt;/p&gt;
+<feed xmlns="http://www.w3.org/2005/Atom"><title>kizzy的个人博客</title><link href="https://kuikui.tech/" rel="alternate"></link><link href="https://kuikui.tech/feeds/all.atom.xml" rel="self"></link><id>https://kuikui.tech/</id><updated>2020-06-13T22:40:50+08:00</updated><entry><title>流畅的python-序列结构</title><link href="https://kuikui.tech/fluent-python-02.html" rel="alternate"></link><published>2020-06-13T22:40:44+08:00</published><updated>2020-06-13T22:40:50+08:00</updated><author><name>kizzy</name></author><id>tag:kuikui.tech,2020-06-13:/fluent-python-02.html</id><summary type="html">&lt;p&gt;对于处理序列数据，无论是哪种数据结构，他们共用一套丰富的操作：迭代，切片，排序，还有拼接。&lt;/p&gt;</summary><content type="html">&lt;p&gt;对于处理序列数据，无论是哪种数据结构，他们共用一套丰富的操作：迭代，切片，排序，还有拼接。&lt;/p&gt;
+&lt;p&gt;python标准库用C实现了丰富的序列类型：
+容器序列: list、tuple以及collection.deque可以存放不同的类型的数据。
+扁平序列：str、bytes以及bytearray,memmoryview和array.array，这类序列只能容纳一种类型。
+容器序列存放的是他们包含的任意类型的对象的引用，而扁平序列存放的是值而不是引用。
+可变序列：list, bytearray, array.array, collections.deque和memoryview
+不可变序列: tuple, str 和 bytes&lt;/p&gt;
+&lt;p&gt;列表推导：a = [b for b in b]  python2中会修改b的值为b[-1], 而python3的局部作用域不会。
+生成笛卡尔积的eg: a = [(b,c) for b in b for c in c]
+生成器表达式: tuple(), 生成器表达式逐个产出元素，不会一次性产出多个列表。&lt;/p&gt;
+&lt;p&gt;Python sort的原理：非数字的字符排序: key = str.lower / key = len，bisect和insort使用二分查找有序序列来查找和插入。
+这章好无聊。。。。。。。。。。。。。&lt;/p&gt;</content><category term="阅读笔记"></category><category term="阅读笔记"></category><category term="python"></category></entry><entry><title>流畅的python-数据模型</title><link href="https://kuikui.tech/fluent-python-01.html" rel="alternate"></link><published>2020-06-12T02:17:24+08:00</published><updated>2020-06-12T02:17:27+08:00</updated><author><name>kizzy</name></author><id>tag:kuikui.tech,2020-06-12:/fluent-python-01.html</id><summary type="html">&lt;p&gt;python语言的品质是一致性，在理解了python的设计之后我们可以很快推测出类似的语法的使用方法，我个人认为python的语法是十分简单的，适合作为一门爱好教授给初学者。&lt;/p&gt;</summary><content type="html">&lt;p&gt;python语言的品质是一致性，在理解了python的设计之后我们可以很快推测出类似的语法的使用方法，我个人认为python的语法是十分简单的，适合作为一门爱好教授给初学者。&lt;/p&gt;
 &lt;p&gt;回到正题，什么是python的数据模型呢？所谓python的数据模型就是对python框架的描述，而python程序的数据都是由对象和对象的关系组成，实际使用者的直观感受就是各种内置的API接口，例如序列，迭代器，函数，类和上下文管理器等等。&lt;/p&gt;
 &lt;p&gt;了解python的数据模型有什么用呢，在特殊方法的帮助下，它可以使你实例化的对象实现和支持python本身的一些语言架构，并与之交互。&lt;/p&gt;
 &lt;p&gt;这些架构包括：迭代，集合类，属性访问，运算符重载，函数和方法的调用，对象的创建和销毁，以及字符串表示形式和格式化以及管理上下文。&lt;/p&gt;
