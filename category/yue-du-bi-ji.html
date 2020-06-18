@@ -59,8 +59,8 @@
 
     <div class='article'>
         <div class="content-title">
-            <a href="https://kuikui.tech/simple-interpreter-02.html"><h1>Let’s Build A Simple Interpreter. Part 2.</h1></a>
-Wed 17 June 2020
+            <a href="https://kuikui.tech/simple-interpreter-03.html"><h1>Let’s Build A Slmple Interpreter. Part 3.</h1></a>
+Fri 19 June 2020
 
 by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
@@ -70,198 +70,230 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
         </div>
         
         <div><blockquote>
-<p><strong><em>如果我們只學習一些方法，我們會受困于一些方法。但是如果你學習一些理論，你就能重構自己的方法。</em></strong>
-本章節會承繼第一節并且添加一些新的功能：</p>
+<p><strong><em>I'm scared of myself. I've always run away from myself. I have always been pursuing Brahman and God. I hope to destroy myself and leave myself in order to discover the core of this Dharma, God-I, life, divinity and absolute in this unknown deepest place. However, I lost myself in the road because of doing so. —— 流浪者之歌</em></strong></p>
 </blockquote>
+<p>​   我們是如何學習一件新的技能呢？例如游泳，我們需要花費很長的時間在水裏進行實踐。因此學習一件事情最爲重要的就實踐，前端程序員需要花費大量的實踐去練習框架組件的demo，會計財務需要進行十分特殊的訓練才能對業務十分熟練，我們編寫編譯器/解釋器同樣如此。</p>
+<p>​   上一節我們實現了簡單的語法分析和詞法分析，當然語法僅僅實現的是加和減這樣十分簡單的語法。本節將要實現一個可以進行持續運算的解釋器，語法圖如下：</p>
+<p><img src="https://ruslanspivak.com/lsbasi-part3/lsbasi_part3_syntax_diagram.png" alt="img" style="zoom:80%;" /></p>
+<p>可以看到，exper表達式，在獲取到一個term之後可以進行選擇，儅term之後還存在加或者減的運算符的時候，那麽需要在獲取運算符后還應該再獲取一個term，如果term之後不存在運算符那麽語法匹配就應該進入下一個流程。</p>
+<p>語法圖有以下兩個主要的功能：</p>
 <ol>
-<li>處理空格字符</li>
-<li>支持多位運算</li>
-<li>添加相減的功能</li>
+<li>以圖形方式表達編程語言的規範。</li>
+<li>可以幫助我們來寫自己的parser。</li>
 </ol>
-<p>新版本的源碼如下：</p>
-<div class="highlight"><pre><span></span><code><span class="o">#</span> <span class="n">Token</span> <span class="n">types</span>
-<span class="o">#</span> <span class="n">EOF</span> <span class="p">(</span><span class="k">end</span><span class="o">-</span><span class="k">of</span><span class="o">-</span><span class="n">file</span><span class="p">)</span> <span class="n">token</span> <span class="k">is</span> <span class="n">used</span> <span class="k">to</span> <span class="n">indicate</span> <span class="n">that</span>
-<span class="o">#</span> <span class="n">there</span> <span class="k">is</span> <span class="k">no</span> <span class="k">more</span> <span class="k">input</span> <span class="k">left</span> <span class="k">for</span> <span class="n">lexical</span> <span class="n">analysis</span>
-<span class="nb">INTEGER</span><span class="p">,</span> <span class="n">PLUS</span><span class="p">,</span> <span class="n">MINUS</span><span class="p">,</span> <span class="n">EOF</span> <span class="o">=</span> <span class="s1">&#39;INTEGER&#39;</span><span class="p">,</span> <span class="s1">&#39;PLUS&#39;</span><span class="p">,</span> <span class="s1">&#39;MINUS&#39;</span><span class="p">,</span> <span class="s1">&#39;EOF&#39;</span>
+<p>根据上面的语法图，以下所有算术表达式均有效：</p>
+<div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="mi">3</span>
+<span class="mi">3</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">4</span>
+<span class="mi">7</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">7</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="mi">5</span>
+</code></pre></div>
 
 
-<span class="k">class</span> <span class="n">Token</span><span class="p">(</span><span class="k">object</span><span class="p">):</span>
-    <span class="n">def</span> <span class="n">__init__</span><span class="p">(</span><span class="k">self</span><span class="p">,</span> <span class="k">type</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="o">#</span> <span class="n">token</span> <span class="k">type</span><span class="p">:</span> <span class="nb">INTEGER</span><span class="p">,</span> <span class="n">PLUS</span><span class="p">,</span> <span class="n">MINUS</span><span class="p">,</span> <span class="k">or</span> <span class="n">EOF</span>
-        <span class="k">self</span><span class="p">.</span><span class="k">type</span> <span class="o">=</span> <span class="k">type</span>
-        <span class="o">#</span> <span class="n">token</span> <span class="n">value</span><span class="p">:</span> <span class="n">non</span><span class="o">-</span><span class="n">negative</span> <span class="nb">integer</span> <span class="n">value</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="k">or</span> <span class="k">None</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+<p>具體代碼如下：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Token types</span>
+<span class="c1">#</span>
+<span class="c1"># EOF (end-of-file) token is used to indicate that</span>
+<span class="c1"># there is no more input left for lexical analysis</span>
+<span class="n">INTEGER</span><span class="p">,</span> <span class="n">PLUS</span><span class="p">,</span> <span class="n">MINUS</span><span class="p">,</span> <span class="n">EOF</span> <span class="o">=</span> <span class="s1">&#39;INTEGER&#39;</span><span class="p">,</span> <span class="s1">&#39;PLUS&#39;</span><span class="p">,</span> <span class="s1">&#39;MINUS&#39;</span><span class="p">,</span> <span class="s1">&#39;EOF&#39;</span>
 
-    <span class="n">def</span> <span class="n">__str__</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="ss">&quot;&quot;&quot;String representation of the class instance.</span>
 
-<span class="ss">        Examples:</span>
-<span class="ss">            Token(INTEGER, 3)</span>
-<span class="ss">            Token(PLUS &#39;+&#39;)</span>
-<span class="ss">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="s1">&#39;Token({type}, {value})&#39;</span><span class="p">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="k">type</span><span class="o">=</span><span class="k">self</span><span class="p">.</span><span class="k">type</span><span class="p">,</span>
-            <span class="n">value</span><span class="o">=</span><span class="n">repr</span><span class="p">(</span><span class="k">self</span><span class="p">.</span><span class="n">value</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">Token</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># token type: INTEGER, PLUS, MINUS, or EOF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
+        <span class="c1"># token value: non-negative integer value, &#39;+&#39;, &#39;-&#39;, or None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;String representation of the class instance.</span>
+
+<span class="sd">        Examples:</span>
+<span class="sd">            Token(INTEGER, 3)</span>
+<span class="sd">            Token(PLUS, &#39;+&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="s1">&#39;Token(</span><span class="si">{type}</span><span class="s1">, </span><span class="si">{value}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="n">def</span> <span class="n">__repr__</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="k">self</span><span class="p">.</span><span class="n">__str__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
 
 
-<span class="k">class</span> <span class="n">Interpreter</span><span class="p">(</span><span class="k">object</span><span class="p">):</span>
-    <span class="n">def</span> <span class="n">__init__</span><span class="p">(</span><span class="k">self</span><span class="p">,</span> <span class="nb">text</span><span class="p">):</span>
-        <span class="o">#</span> <span class="n">client</span> <span class="n">string</span> <span class="k">input</span><span class="p">,</span> <span class="n">e</span><span class="p">.</span><span class="k">g</span><span class="p">.</span> <span class="ss">&quot;3 + 5&quot;</span><span class="p">,</span> <span class="ss">&quot;12 - 5&quot;</span><span class="p">,</span> <span class="n">etc</span>
-        <span class="k">self</span><span class="p">.</span><span class="nb">text</span> <span class="o">=</span> <span class="nb">text</span>
-        <span class="o">#</span> <span class="k">self</span><span class="p">.</span><span class="n">pos</span> <span class="k">is</span> <span class="n">an</span> <span class="k">index</span> <span class="k">into</span> <span class="k">self</span><span class="p">.</span><span class="nb">text</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="o">#</span> <span class="k">current</span> <span class="n">token</span> <span class="n">instance</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="k">None</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="nb">text</span><span class="p">[</span><span class="k">self</span><span class="p">.</span><span class="n">pos</span><span class="p">]</span>
+<span class="k">class</span> <span class="nc">Interpreter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="c1"># client string input, e.g. &quot;3 + 5&quot;, &quot;12 - 5 + 3&quot;, etc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
+        <span class="c1"># self.pos is an index into self.text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># current token instance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
 
-    <span class="n">def</span> <span class="n">error</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="n">raise</span> <span class="k">Exception</span><span class="p">(</span><span class="s1">&#39;Error parsing input&#39;</span><span class="p">)</span>
+    <span class="c1">##########################################################</span>
+    <span class="c1"># Lexer code                                             #</span>
+    <span class="c1">##########################################################</span>
+    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Invalid syntax&#39;</span><span class="p">)</span>
 
-    <span class="n">def</span> <span class="n">advance</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="ss">&quot;&quot;&quot;Advance the &#39;pos&#39; pointer and set the &#39;current_char&#39; variable.&quot;&quot;&quot;</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="k">self</span><span class="p">.</span><span class="n">pos</span> <span class="o">&gt;</span> <span class="n">len</span><span class="p">(</span><span class="k">self</span><span class="p">.</span><span class="nb">text</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="k">None</span>  <span class="o">#</span> <span class="n">Indicates</span> <span class="k">end</span> <span class="k">of</span> <span class="k">input</span>
+    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Advance the `pos` pointer and set the `current_char` variable.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Indicates end of input</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="nb">text</span><span class="p">[</span><span class="k">self</span><span class="p">.</span><span class="n">pos</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
 
-    <span class="n">def</span> <span class="n">skip_whitespace</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="n">while</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="k">is</span> <span class="k">not</span> <span class="k">None</span> <span class="k">and</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span><span class="p">.</span><span class="n">isspace</span><span class="p">():</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">advance</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">skip_whitespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isspace</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
 
-    <span class="n">def</span> <span class="nb">integer</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="ss">&quot;&quot;&quot;Return a (multidigit) integer consumed from the input.&quot;&quot;&quot;</span>
-        <span class="k">result</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="n">while</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="k">is</span> <span class="k">not</span> <span class="k">None</span> <span class="k">and</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span><span class="p">.</span><span class="n">isdigit</span><span class="p">():</span>
-            <span class="k">result</span> <span class="o">+=</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">advance</span><span class="p">()</span>
-        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="k">result</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">integer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a (multidigit) integer consumed from the input.&quot;&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
-    <span class="n">def</span> <span class="n">get_next_token</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="ss">&quot;&quot;&quot;Lexical analyzer (also known as scanner or tokenizer)</span>
+    <span class="k">def</span> <span class="nf">get_next_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lexical analyzer (also known as scanner or tokenizer)</span>
 
-<span class="ss">        This method is responsible for breaking a sentence</span>
-<span class="ss">        apart into tokens.</span>
-<span class="ss">        &quot;&quot;&quot;</span>
-        <span class="n">while</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="k">is</span> <span class="k">not</span> <span class="k">None</span><span class="p">:</span>
+<span class="sd">        This method is responsible for breaking a sentence</span>
+<span class="sd">        apart into tokens. One token at a time.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
 
-            <span class="k">if</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span><span class="p">.</span><span class="n">isspace</span><span class="p">():</span>
-                <span class="k">self</span><span class="p">.</span><span class="n">skip_whitespace</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isspace</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">skip_whitespace</span><span class="p">()</span>
                 <span class="k">continue</span>
 
-            <span class="k">if</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span><span class="p">.</span><span class="n">isdigit</span><span class="p">():</span>
-                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="nb">INTEGER</span><span class="p">,</span> <span class="k">self</span><span class="p">.</span><span class="nb">integer</span><span class="p">())</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">INTEGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">integer</span><span class="p">())</span>
 
-            <span class="k">if</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
-                <span class="k">self</span><span class="p">.</span><span class="n">advance</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
                 <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">PLUS</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="k">self</span><span class="p">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
-                <span class="k">self</span><span class="p">.</span><span class="n">advance</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
                 <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">MINUS</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
 
-            <span class="k">self</span><span class="p">.</span><span class="n">error</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">()</span>
 
-        <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">EOF</span><span class="p">,</span> <span class="k">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">EOF</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
-    <span class="n">def</span> <span class="n">eat</span><span class="p">(</span><span class="k">self</span><span class="p">,</span> <span class="n">token_type</span><span class="p">):</span>
-        <span class="o">#</span> <span class="n">compare</span> <span class="n">the</span> <span class="k">current</span> <span class="n">token</span> <span class="k">type</span> <span class="k">with</span> <span class="n">the</span> <span class="n">passed</span> <span class="n">token</span>
-        <span class="o">#</span> <span class="k">type</span> <span class="k">and</span> <span class="k">if</span> <span class="n">they</span> <span class="k">match</span> <span class="k">then</span> <span class="ss">&quot;eat&quot;</span> <span class="n">the</span> <span class="k">current</span> <span class="n">token</span>
-        <span class="o">#</span> <span class="k">and</span> <span class="n">assign</span> <span class="n">the</span> <span class="k">next</span> <span class="n">token</span> <span class="k">to</span> <span class="n">the</span> <span class="k">self</span><span class="p">.</span><span class="n">current_token</span><span class="p">,</span>
-        <span class="o">#</span> <span class="n">otherwise</span> <span class="n">raise</span> <span class="n">an</span> <span class="k">exception</span><span class="p">.</span>
-        <span class="k">if</span> <span class="k">self</span><span class="p">.</span><span class="n">current_token</span><span class="p">.</span><span class="k">type</span> <span class="o">==</span> <span class="n">token_type</span><span class="p">:</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="n">get_next_token</span><span class="p">()</span>
+    <span class="c1">##########################################################</span>
+    <span class="c1"># Parser / Interpreter code                              #</span>
+    <span class="c1">##########################################################</span>
+    <span class="k">def</span> <span class="nf">eat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_type</span><span class="p">):</span>
+        <span class="c1"># compare the current token type with the passed token</span>
+        <span class="c1"># type and if they match then &quot;eat&quot; the current token</span>
+        <span class="c1"># and assign the next token to the self.current_token,</span>
+        <span class="c1"># otherwise raise an exception.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">token_type</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_token</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">error</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">()</span>
 
-    <span class="n">def</span> <span class="n">expr</span><span class="p">(</span><span class="k">self</span><span class="p">):</span>
-        <span class="ss">&quot;&quot;&quot;Parser / Interpreter</span>
+    <span class="k">def</span> <span class="nf">term</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an INTEGER token value.&quot;&quot;&quot;</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">INTEGER</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">token</span><span class="o">.</span><span class="n">value</span>
 
-<span class="ss">        expr -&gt; INTEGER PLUS INTEGER</span>
-<span class="ss">        expr -&gt; INTEGER MINUS INTEGER</span>
-<span class="ss">        &quot;&quot;&quot;</span>
-        <span class="o">#</span> <span class="k">set</span> <span class="k">current</span> <span class="n">token</span> <span class="k">to</span> <span class="n">the</span> <span class="k">first</span> <span class="n">token</span> <span class="n">taken</span> <span class="k">from</span> <span class="n">the</span> <span class="k">input</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="n">get_next_token</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">expr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Arithmetic expression parser / interpreter.&quot;&quot;&quot;</span>
+        <span class="c1"># set current token to the first token taken from the input</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_next_token</span><span class="p">()</span>
 
-        <span class="o">#</span> <span class="n">we</span> <span class="n">expect</span> <span class="n">the</span> <span class="k">current</span> <span class="n">token</span> <span class="k">to</span> <span class="n">be</span> <span class="n">an</span> <span class="nb">integer</span>
-        <span class="k">left</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="n">current_token</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">eat</span><span class="p">(</span><span class="nb">INTEGER</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">PLUS</span><span class="p">,</span> <span class="n">MINUS</span><span class="p">):</span>
+            <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span>
+            <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">PLUS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">PLUS</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MINUS</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">MINUS</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
 
-        <span class="o">#</span> <span class="n">we</span> <span class="n">expect</span> <span class="n">the</span> <span class="k">current</span> <span class="n">token</span> <span class="k">to</span> <span class="n">be</span> <span class="n">either</span> <span class="n">a</span> <span class="s1">&#39;+&#39;</span> <span class="k">or</span> <span class="s1">&#39;-&#39;</span>
-        <span class="n">op</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="n">current_token</span>
-        <span class="k">if</span> <span class="n">op</span><span class="p">.</span><span class="k">type</span> <span class="o">==</span> <span class="n">PLUS</span><span class="p">:</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">eat</span><span class="p">(</span><span class="n">PLUS</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">self</span><span class="p">.</span><span class="n">eat</span><span class="p">(</span><span class="n">MINUS</span><span class="p">)</span>
-
-        <span class="o">#</span> <span class="n">we</span> <span class="n">expect</span> <span class="n">the</span> <span class="k">current</span> <span class="n">token</span> <span class="k">to</span> <span class="n">be</span> <span class="n">an</span> <span class="nb">integer</span>
-        <span class="k">right</span> <span class="o">=</span> <span class="k">self</span><span class="p">.</span><span class="n">current_token</span>
-        <span class="k">self</span><span class="p">.</span><span class="n">eat</span><span class="p">(</span><span class="nb">INTEGER</span><span class="p">)</span>
-        <span class="o">#</span> <span class="k">after</span> <span class="n">the</span> <span class="n">above</span> <span class="k">call</span> <span class="n">the</span> <span class="k">self</span><span class="p">.</span><span class="n">current_token</span> <span class="k">is</span> <span class="k">set</span> <span class="k">to</span>
-        <span class="o">#</span> <span class="n">EOF</span> <span class="n">token</span>
-
-        <span class="o">#</span> <span class="k">at</span> <span class="n">this</span> <span class="n">point</span> <span class="n">either</span> <span class="n">the</span> <span class="nb">INTEGER</span> <span class="n">PLUS</span> <span class="nb">INTEGER</span> <span class="k">or</span>
-        <span class="o">#</span> <span class="n">the</span> <span class="nb">INTEGER</span> <span class="n">MINUS</span> <span class="nb">INTEGER</span> <span class="n">sequence</span> <span class="k">of</span> <span class="n">tokens</span>
-        <span class="o">#</span> <span class="n">has</span> <span class="n">been</span> <span class="n">successfully</span> <span class="k">found</span> <span class="k">and</span> <span class="n">the</span> <span class="k">method</span> <span class="n">can</span> <span class="n">just</span>
-        <span class="o">#</span> <span class="k">return</span> <span class="n">the</span> <span class="k">result</span> <span class="k">of</span> <span class="n">adding</span> <span class="k">or</span> <span class="n">subtracting</span> <span class="n">two</span> <span class="n">integers</span><span class="p">,</span>
-        <span class="o">#</span> <span class="n">thus</span> <span class="n">effectively</span> <span class="n">interpreting</span> <span class="n">client</span> <span class="k">input</span>
-        <span class="k">if</span> <span class="n">op</span><span class="p">.</span><span class="k">type</span> <span class="o">==</span> <span class="n">PLUS</span><span class="p">:</span>
-            <span class="k">result</span> <span class="o">=</span> <span class="k">left</span><span class="p">.</span><span class="n">value</span> <span class="o">+</span> <span class="k">right</span><span class="p">.</span><span class="n">value</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">result</span> <span class="o">=</span> <span class="k">left</span><span class="p">.</span><span class="n">value</span> <span class="o">-</span> <span class="k">right</span><span class="p">.</span><span class="n">value</span>
-        <span class="k">return</span> <span class="k">result</span>
+        <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="n">def</span> <span class="n">main</span><span class="p">():</span>
-    <span class="n">while</span> <span class="k">True</span><span class="p">:</span>
-        <span class="n">try</span><span class="p">:</span>
-            <span class="o">#</span> <span class="k">To</span> <span class="n">run</span> <span class="k">under</span> <span class="n">Python3</span> <span class="k">replace</span> <span class="s1">&#39;raw_input&#39;</span> <span class="k">call</span>
-            <span class="o">#</span> <span class="k">with</span> <span class="s1">&#39;input&#39;</span>
-            <span class="nb">text</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;calc&gt; &#39;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">EOFError</span><span class="p">:</span>
-            <span class="n">break</span>
-        <span class="k">if</span> <span class="k">not</span> <span class="nb">text</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># To run under Python3 replace &#39;raw_input&#39; call</span>
+            <span class="c1"># with &#39;input&#39;</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;calc&gt; &#39;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
             <span class="k">continue</span>
-        <span class="n">interpreter</span> <span class="o">=</span> <span class="n">Interpreter</span><span class="p">(</span><span class="nb">text</span><span class="p">)</span>
-        <span class="k">result</span> <span class="o">=</span> <span class="n">interpreter</span><span class="p">.</span><span class="n">expr</span><span class="p">()</span>
-        <span class="n">print</span><span class="p">(</span><span class="k">result</span><span class="p">)</span>
+        <span class="n">interpreter</span> <span class="o">=</span> <span class="n">Interpreter</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">interpreter</span><span class="o">.</span><span class="n">expr</span><span class="p">()</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
 
 
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </code></pre></div>
 
 
-<p>保存一下這個文件為cal2.py，嘗試運行一下這個解釋器（哦對了，忘了説了，原文章那會是15年寫的，所以得用python2）。</p>
-<div class="highlight"><pre><span></span><code>$ python calc2.py
-calc&gt; <span class="m">27</span> + <span class="m">3</span>
-<span class="m">30</span>
-calc&gt; <span class="m">27</span> - <span class="m">7</span>
-<span class="m">20</span>
-calc&gt;
+<p>保存cal.py并且運行：</p>
+<div class="highlight"><pre><span></span><code><span class="err">$</span> <span class="n">python</span> <span class="n">calc3</span><span class="o">.</span><span class="n">py</span>
+<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">3</span>
+<span class="mi">3</span>
+<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">7</span> <span class="o">-</span> <span class="mi">4</span>
+<span class="mi">3</span>
+<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">10</span> <span class="o">+</span> <span class="mi">5</span>
+<span class="mi">15</span>
+<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">7</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="mi">5</span>
+<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">10</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">-</span> <span class="mi">15</span>
+<span class="mi">5</span>
+<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">3</span> <span class="o">+</span>
+<span class="n">Traceback</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+  <span class="n">File</span> <span class="s2">&quot;calc3.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">147</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+    <span class="n">main</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s2">&quot;calc3.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">142</span><span class="p">,</span> <span class="ow">in</span> <span class="n">main</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">interpreter</span><span class="o">.</span><span class="n">expr</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s2">&quot;calc3.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">123</span><span class="p">,</span> <span class="ow">in</span> <span class="n">expr</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s2">&quot;calc3.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">110</span><span class="p">,</span> <span class="ow">in</span> <span class="n">term</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">INTEGER</span><span class="p">)</span>
+  <span class="n">File</span> <span class="s2">&quot;calc3.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">105</span><span class="p">,</span> <span class="ow">in</span> <span class="n">eat</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">()</span>
+  <span class="n">File</span> <span class="s2">&quot;calc3.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">45</span><span class="p">,</span> <span class="ow">in</span> <span class="n">error</span>
+    <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Invalid syntax&#39;</span><span class="p">)</span>
+<span class="ne">Exception</span><span class="p">:</span> <span class="n">Invalid</span> <span class="n">syntax</span>
 </code></pre></div>
 
 
-<p>源代碼主要做的更改：</p>
-<ol>
-<li>重構了get_next_token函數，pos指針遞增的邏輯被封裝在了更爲高級的單獨方法中。</li>
-<li>添加了兩個方法，skip_whitespace用來忽略空格而interger方法用來處理多位的輸入數據。</li>
-<li>expr方法增添了新的語法識別模式，添加了減法操作。</li>
-</ol>
-<p>上一節其實提到了<strong>token</strong>，儅多個<strong>token</strong>組成一個序列就形成了<strong>lexme</strong>
-擧個例子：
-<img alt="image" src="https://ruslanspivak.com/lsbasi-part2/lsbasi_part2_lexemes.png"></p>
-<p>expr方法每次需要匹配一個相應的語法表達式來進行下一步的操作，其實這跟我們從小學到大學學習的數學公式比較類似，我們需要合理對公式進行填充
-才能獲取的下一步的操作得出結果，這個過程我們定義在解釋其中其實就是parser，也就是下面这张图。
-<img alt="image.png" src="https://i.loli.net/2020/06/17/kxSnVGUreHoq4K1.png">
-就到这了，溜了溜了。</p></div>
+<p>Over~~~~</p></div>
         <hr />
     </div>
 		
+
+ 
+        
+
+ 
+
+    <div class='article'>
+        <a href="https://kuikui.tech/simple-interpreter-02.html"><h2>Let’s Build A Simple Interpreter. Part 2.</h2></a>
+        <div class= "well small"> Wed 17 June 2020
+
+by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
+ 
+
+
+ </div>
+        <div class="summary"><p>如果我們只學習一些方法，我們會受困于一些方法。但是如果你學習一些理論，你就能重構自己的方法。</p> <a class="btn btn-info xsmall" href="https://kuikui.tech/simple-interpreter-02.html">read more</a></div>
+    </div>	
+				
 
  
         
@@ -356,6 +388,7 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
                 </li>
                 
                 <li><a href="https://kuikui.tech/category/gan-xiang-yu-ji-lu.html">感想与记录</a></li>
+                <li><a href="https://kuikui.tech/category/shua-ti-bi-ji.html">刷题笔记</a></li>
                 <li><a href="https://kuikui.tech/category/yue-du-bi-ji.html">阅读笔记</a></li>
                 <li><a href="https://kuikui.tech/category/yun-wei.html">运维</a></li>
                    
