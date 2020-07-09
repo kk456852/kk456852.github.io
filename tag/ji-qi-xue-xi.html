@@ -2,7 +2,7 @@
 <html lang="zh-cn">
 <head>
     <meta charset="utf-8">
-    <title>kizzy的个人博客 - ubuntu</title>
+    <title>kizzy的个人博客 - 机器学习</title>
     <meta name="description" content="">
     <meta name="author" content="kizzy">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,8 +59,8 @@
 
     <div class='article'>
         <div class="content-title">
-            <a href="https://kuikui.tech/my-super-post.html"><h1>一次wsl和ubuntu20.04的失败配置记录</h1></a>
-Wed 27 May 2020
+            <a href="https://kuikui.tech/play-game-with-ai.html"><h1>如何使用强化学习玩游戏</h1></a>
+Fri 29 May 2020
 
 by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
@@ -69,30 +69,13 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
         </div>
         
-        <div><p>事情是这样的，这几天在改完毕业论文之后我闲的没事干，就想着能不能使用WSL作为服务器挂载一些静态网页。</p>
-<p>我的技术栈是 node http-server直接启动服务，或者使用docker的nginx用容器的方式开启服务。</p>
-<p>第一种比较简单直接使用 nohug命令就可以完成，而在我尝试docker的时候发生了一些比较有意思的问题。</p>
-<p>我们都知道通常安装docker的时候，只需要按照官方安装教程走下来就可以，大概要经历这么几个流程：</p>
-<ol>
-<li>卸载旧版本:</br>
-<code>$ sudo apt-get remove docker docker-engine docker.io containerd runc</code></li>
-<li>添加官方gpg密钥:</br>
-<code>$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -</code></li>
-<li>安装docker社区版的的镜像:</br>
-<code>$ sudo apt-get install docker-ce docker-ce-cli containerd.io</code></li>
-</ol>
-<p>如果你的ubuntu服务器能够顺利跑完上述命令的话，那么恭喜，你已经成功安装了docker社区版在你的服务器里。现在只需要执行：</br>
-<code>$ sudo docker run hello-world</code>  即可使用docker最简易的demo</p>
-<p>But! But! But! 我在添加官方gpg密钥的时候发生了错误，报错如下：</br>
-<code>gpg: can't connect to the agent: IPC connect call failed (WSL Ubuntu 20.04)</code></p>
-<p>在我逛遍StackOverflow和WSL，github issue之后得出如下结论：</p>
-<ol>
-<li>WSL发行至今是有两个版本的，分别为WSL1和WSL2.</li>
-<li>WSL1适配的是ubuntu18.04版本，WSL2适配的是20.04版本.</li>
-<li>我的OS内核时17开头的版本，内核版本太低只能安装wsl但是我却安装了ubuntu20.04，所以会有如上的错误。</li>
-</ol>
-<p>这个错误仍然出现在了我使用gcc编译cpython解释器的过程中，有一些依赖一直难以完全安装，我希望Wsl官方能在wsl1安装ubuntu20.04的时候给与一定提示，或者直接关闭这种途径。</p>
-<p>我是kizzy，一个对各个领域有一点了解的99年编程萌新，想要和大家做朋友，欢迎找我添加友链。</p></div>
+        <div><p>​   随着机器学习的热潮重新回归，越来越多受困于算力的项目被重启，强化学习就是其中之一。那么什么是强化学习呢？</p>
+<blockquote>
+<p>强化学习（Reinforcement Learning, RL），又称再励学习、评价学习或增强学习，是<a href="https://baike.baidu.com/item/机器学习/217599">机器学习</a>的范式和<a href="https://baike.baidu.com/item/方法论/82748">方法论</a>之一，用于描述和解决<a href="https://baike.baidu.com/item/智能体/9446647">智能体</a>（agent）在与环境的交互过程中通过学习策略以达成回报最大化或实现特定目标的问题。</p>
+<p>强化学习理论受到<a href="https://baike.baidu.com/item/行为主义心理学/1331310">行为主义心理学</a>启发，侧重在线学习并试图在探索-利用（exploration-exploitation）间保持平衡。不同于<a href="https://baike.baidu.com/item/监督学习/9820109">监督学习</a>和<a href="https://baike.baidu.com/item/非监督学习/16588789">非监督学习</a>，强化学习不要求预先给定任何数据，而是通过接收环境对动作的奖励（反馈）获得学习信息并更新模型参数 。</p>
+<p>强化学习问题在<a href="https://baike.baidu.com/item/信息论/302185">信息论</a>、<a href="https://baike.baidu.com/item/博弈论/81545">博弈论</a>、<a href="https://baike.baidu.com/item/自动控制/5337539">自动控制</a>等领域有得到讨论，被用于解释<a href="https://baike.baidu.com/item/有限理性/1125108">有限理性</a>条件下的平衡态、设计<a href="https://baike.baidu.com/item/推荐系统/10267357">推荐系统</a>和机器人交互系统 [3] 。一些复杂的强化学习算法在一定程度上具备解决复杂问题的通用智能，可以在围棋和电子游戏中达到人类水平 。</p>
+</blockquote>
+<p>好像</p></div>
         <hr />
     </div>
 		
@@ -100,7 +83,7 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
 <ul>
     <li class="prev disabled"><a href="#">&larr; Previous</a></li>
 
-    <li class="active"><a href="https://kuikui.tech/tag/ubuntu.html">1</a></li>
+    <li class="active"><a href="https://kuikui.tech/tag/ji-qi-xue-xi.html">1</a></li>
 
     <li class="next disabled"><a href="#">&rarr; Next</a></li>
 

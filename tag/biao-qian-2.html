@@ -2,7 +2,7 @@
 <html lang="zh-cn">
 <head>
     <meta charset="utf-8">
-    <title>kizzy的个人博客 - ubuntu</title>
+    <title>kizzy的个人博客 - 标签2</title>
     <meta name="description" content="">
     <meta name="author" content="kizzy">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -59,8 +59,8 @@
 
     <div class='article'>
         <div class="content-title">
-            <a href="https://kuikui.tech/my-super-post.html"><h1>一次wsl和ubuntu20.04的失败配置记录</h1></a>
-Wed 27 May 2020
+            <a href="https://kuikui.tech/网页slug.html"><h1>编辑你的题目</h1></a>
+Tue 30 June 2020
 
 by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
@@ -69,30 +69,7 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
         </div>
         
-        <div><p>事情是这样的，这几天在改完毕业论文之后我闲的没事干，就想着能不能使用WSL作为服务器挂载一些静态网页。</p>
-<p>我的技术栈是 node http-server直接启动服务，或者使用docker的nginx用容器的方式开启服务。</p>
-<p>第一种比较简单直接使用 nohug命令就可以完成，而在我尝试docker的时候发生了一些比较有意思的问题。</p>
-<p>我们都知道通常安装docker的时候，只需要按照官方安装教程走下来就可以，大概要经历这么几个流程：</p>
-<ol>
-<li>卸载旧版本:</br>
-<code>$ sudo apt-get remove docker docker-engine docker.io containerd runc</code></li>
-<li>添加官方gpg密钥:</br>
-<code>$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -</code></li>
-<li>安装docker社区版的的镜像:</br>
-<code>$ sudo apt-get install docker-ce docker-ce-cli containerd.io</code></li>
-</ol>
-<p>如果你的ubuntu服务器能够顺利跑完上述命令的话，那么恭喜，你已经成功安装了docker社区版在你的服务器里。现在只需要执行：</br>
-<code>$ sudo docker run hello-world</code>  即可使用docker最简易的demo</p>
-<p>But! But! But! 我在添加官方gpg密钥的时候发生了错误，报错如下：</br>
-<code>gpg: can't connect to the agent: IPC connect call failed (WSL Ubuntu 20.04)</code></p>
-<p>在我逛遍StackOverflow和WSL，github issue之后得出如下结论：</p>
-<ol>
-<li>WSL发行至今是有两个版本的，分别为WSL1和WSL2.</li>
-<li>WSL1适配的是ubuntu18.04版本，WSL2适配的是20.04版本.</li>
-<li>我的OS内核时17开头的版本，内核版本太低只能安装wsl但是我却安装了ubuntu20.04，所以会有如上的错误。</li>
-</ol>
-<p>这个错误仍然出现在了我使用gcc编译cpython解释器的过程中，有一些依赖一直难以完全安装，我希望Wsl官方能在wsl1安装ubuntu20.04的时候给与一定提示，或者直接关闭这种途径。</p>
-<p>我是kizzy，一个对各个领域有一点了解的99年编程萌新，想要和大家做朋友，欢迎找我添加友链。</p></div>
+        <div></div>
         <hr />
     </div>
 		
@@ -100,7 +77,7 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
 <ul>
     <li class="prev disabled"><a href="#">&larr; Previous</a></li>
 
-    <li class="active"><a href="https://kuikui.tech/tag/ubuntu.html">1</a></li>
+    <li class="active"><a href="https://kuikui.tech/tag/biao-qian-2.html">1</a></li>
 
     <li class="next disabled"><a href="#">&rarr; Next</a></li>
 

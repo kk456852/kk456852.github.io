@@ -2,7 +2,7 @@
 <html lang="zh-cn">
 <head>
     <meta charset="utf-8">
-    <title>kizzy的个人博客 - ubuntu</title>
+    <title>kizzy的个人博客 - 编辑你的题目</title>
     <meta name="description" content="">
     <meta name="author" content="kizzy">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,62 +52,71 @@
     <div class="row">
 
         <div class="span9">
-        
-
-        
-
-
     <div class='article'>
         <div class="content-title">
-            <a href="https://kuikui.tech/my-super-post.html"><h1>一次wsl和ubuntu20.04的失败配置记录</h1></a>
-Wed 27 May 2020
+            <h1>编辑你的题目</h1>
+Thu 09 July 2020
 
 by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
 
 
- 
         </div>
-        
-        <div><p>事情是这样的，这几天在改完毕业论文之后我闲的没事干，就想着能不能使用WSL作为服务器挂载一些静态网页。</p>
-<p>我的技术栈是 node http-server直接启动服务，或者使用docker的nginx用容器的方式开启服务。</p>
-<p>第一种比较简单直接使用 nohug命令就可以完成，而在我尝试docker的时候发生了一些比较有意思的问题。</p>
-<p>我们都知道通常安装docker的时候，只需要按照官方安装教程走下来就可以，大概要经历这么几个流程：</p>
-<ol>
-<li>卸载旧版本:</br>
-<code>$ sudo apt-get remove docker docker-engine docker.io containerd runc</code></li>
-<li>添加官方gpg密钥:</br>
-<code>$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -</code></li>
-<li>安装docker社区版的的镜像:</br>
-<code>$ sudo apt-get install docker-ce docker-ce-cli containerd.io</code></li>
-</ol>
-<p>如果你的ubuntu服务器能够顺利跑完上述命令的话，那么恭喜，你已经成功安装了docker社区版在你的服务器里。现在只需要执行：</br>
-<code>$ sudo docker run hello-world</code>  即可使用docker最简易的demo</p>
-<p>But! But! But! 我在添加官方gpg密钥的时候发生了错误，报错如下：</br>
-<code>gpg: can't connect to the agent: IPC connect call failed (WSL Ubuntu 20.04)</code></p>
-<p>在我逛遍StackOverflow和WSL，github issue之后得出如下结论：</p>
-<ol>
-<li>WSL发行至今是有两个版本的，分别为WSL1和WSL2.</li>
-<li>WSL1适配的是ubuntu18.04版本，WSL2适配的是20.04版本.</li>
-<li>我的OS内核时17开头的版本，内核版本太低只能安装wsl但是我却安装了ubuntu20.04，所以会有如上的错误。</li>
-</ol>
-<p>这个错误仍然出现在了我使用gcc编译cpython解释器的过程中，有一些依赖一直难以完全安装，我希望Wsl官方能在wsl1安装ubuntu20.04的时候给与一定提示，或者直接关闭这种途径。</p>
-<p>我是kizzy，一个对各个领域有一点了解的99年编程萌新，想要和大家做朋友，欢迎找我添加友链。</p></div>
-        <hr />
-    </div>
-		
-<div class="pagination">
+	
+        <div><p>​   Nginx 是一款轻量级的 Web服务器/反向代理服务器及电子邮件代理服务器，它在BSD-like协议下发行。特点是占有内存比较少，提供的并发能力强，主要的用户有：百度，京东，新浪，网易，腾讯以及淘宝。</p>
+<p>​   除了Nginx之外的web服务器还有很多，比如Apache，Microsoft-IIS等，下图是全球网站服务器的统计报告。</p>
+<p><img alt="" src="https://i.bmp.ovh/imgs/2020/07/90dc625bc2decadf.png"></p>
+<p>​   随着移动互联网和PC的兴起，网站的访问量也在与日俱增，这就对后端的Web服务器提出了极为严苛的高并发需求。而nginx就是为性能而生，发布以来一直注重高性能，高并发， 低CPU内存消耗。在功能方面：支持负载均衡，反向代理，访问控制，热部署以及高扩展性等特性，配置简单文档丰富。</p>
+<p>​   但是可以看到apache一直处于领先地位，很多时候架构选择是Nginx+Apache并用的，那么该如何选择呢？</p>
+<p><strong>Nginx和Apache的共同之处：</strong></p>
 <ul>
-    <li class="prev disabled"><a href="#">&larr; Previous</a></li>
-
-    <li class="active"><a href="https://kuikui.tech/tag/ubuntu.html">1</a></li>
-
-    <li class="next disabled"><a href="#">&rarr; Next</a></li>
-
+<li>同是 HTTP 服务器软件，都采用模块化结构设计</li>
+<li>支持通用语言接口，如 PHP、Python 等</li>
+<li>支持正向代理和反向代理</li>
+<li>支持虚拟主机及 SSL 加密传输</li>
+<li>支持缓存及压缩传输</li>
+<li>支持 URL 重写</li>
+<li>模块多，扩展性强</li>
+<li>多平台支持</li>
 </ul>
-</div>
- 
-  
+<p><strong>Nginx的优势：</strong></p>
+<ul>
+<li>轻量级：安装文件小，运行时 CPU 内存使用率低；</li>
+<li>性能强：支持多核，处理静态文件效率高，内核采用的 poll 模型最大可以支持 50K 并发连接；</li>
+<li>支持热部署，同时启动速度快，可以在不间断服务的情况下对软件和配置进行升级；</li>
+<li>负载均衡，支持容错和健康检查；</li>
+<li>代理功能强大，支持无缓存的反向代理，同时支持 IMAP/POP3/SMTP 的代理。</li>
+</ul>
+<p><strong>Nginx的劣势：</strong></p>
+<ul>
+<li>相比 Apache 模块要少一些，常用模块都有，支持 LUA 语言扩展功能</li>
+<li>对动态请求支持不如 Apache</li>
+<li>Windows 版本功能有限，受限于 Windows 的特性，支持最好的还是 Unix/Linux 系统</li>
+</ul>
+<p><strong>Nginx的运行原理：</strong></p>
+<p>​   Nginx 由内核和一系列模块组成：内核提供 web 服务的基本功能，如启用网络协议、创建运行环境、接收和分配客户端请求、处理模块之间的交互。模块实现 Nginx 的各种功能和操作，Nginx 的模块从结构上分为核心模块、基础模块和第三方模块。</p>
+<p><img alt="" src="https://i.bmp.ovh/imgs/2020/07/4e32932149f1243b.png"></p>
+<p>​   其实nginx还有redis这些被后端程序员经常使用的开源软件背后的逻辑并不复杂，甚至自己去实现一个也不是多么困难，难得是你碰到一个需求痛点自己动手造轮子去开创解决。 意识到不完美，有想法改进，还能有能力实现想法这是十分难能可贵的。</p>
+<p><img alt="查看源图像" src="http://upload.ikanchai.com/2019/1218/1576638080590.png"></p></div>
+	
+        <hr>
+
+<a href="https://twitter.com/share" class="twitter-share-button" data-text="编辑你的题目" data-via="YXTkbHci1iEWgAM">Tweet</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        <h2>Comments</h2>
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_shortname = 'kuikui'; 
+    var disqus_title = '编辑你的题目';
+
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'https://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    </div>
         </div>
         
         <div class="span3">
