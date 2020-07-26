@@ -59,8 +59,8 @@
 
     <div class='article'>
         <div class="content-title">
-            <a href="https://kuikui.tech/simple-interpreter-05.html"><h1>Let’s Build A Slmple Interpreter. Part 5.</h1></a>
-Sun 28 June 2020
+            <a href="https://kuikui.tech/python-multiprocesss.html"><h1>python的多线程，多进程以及协程。</h1></a>
+Sun 26 July 2020
 
 by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
@@ -69,240 +69,184 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
  
         </div>
         
-        <div><p>​   当遇到一件比较困难的事情的时候我们是如何解决的呢？ 处理复杂问题需要十分强的抽丝剥茧的能力。所谓抽丝剥茧的能力，其实有另外一个名字——深度思考。而深度思考需要掌握一定的方法论才会有所效果。例如常见的有阅读杂书来培养全方位的思考能力，不停的对自己提问对某一概念的理解来测试我们的洞察深度，都是一些不错的方法。</p>
-<p><img alt="image.png" src="https://i.loli.net/2020/06/28/Jz7SbwQlnrB1NCh.png"></p>
-<p>​   显然构建一个编译器是十分复杂的关系，普遍来讲要经过构建词法分析器，构建语法分析器，语义分析，代码生成，代码优化以及目标代码生成的过程。</p>
-<ol>
-<li>词法分析器：将输入的字符流转换为特定的单词，这一步我们需要识别组合字符，识别出数字，标识符和关键字。</li>
-<li>语法分析器：将词法分析器解析的单词转换成特定的语句，也就是组合词法分析器的结果，去匹配符合语法的语句，构建抽象语法树（AST）。</li>
-<li>语义分析：在构建AST后我们会对其进行分析。进行类型匹配的工作，来检测代码语意的正确性。</li>
-<li>代码生成：这一步是编译器前端后后端交互的地方，大多数语言的做法是抽象一个脱离于机器的中间语言（IR）以便后期的优化工作。这一层往往有两个选择，一种是基于栈的IR（虚拟机平台），另一种是基于寄存器的IR（LLVM）。</li>
-<li>代码优化：这一步的目的是为了使得代码更加高效。一般分为两种优化，一是与运行机器平台相关的优化，一种是与运行机器平台无关的优化。这一部进去的是IR层，输出的也是IR层。</li>
-<li>代码生成：代码生成基本是所有编译器做的最后的工作了，对于编译型语言会生成目标机器指令集的指令。</li>
-</ol>
-<p><img alt="image.png" src="https://i.loli.net/2020/06/28/iwJnCmIfHOxqhk5.png"></p>
-<p>虽然构建一个编译器貌似是一个十分复杂的过程，但是已经有很多前辈做了很多工作比如代码优化的时候LLVM可以提供很多的pass优化，我们甚至完全可以做一个复读机来实现自己的编程语言。</p>
-<p>回想在第四节的时候我们在计算器的feature里加入了乘法和除法功能，在普通算术和大多数编程语言中，加，减，乘和除是左关联的：</p>
-<div class="highlight"><pre><span></span><code><span class="mi">7</span> <span class="o">+</span> <span class="mi">3</span> <span class="o">+</span> <span class="mi">1</span> <span class="k">is</span> <span class="n">equivalent</span> <span class="k">to</span> <span class="p">(</span><span class="mi">7</span> <span class="o">+</span> <span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-<span class="mi">7</span> <span class="o">-</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">is</span> <span class="n">equivalent</span> <span class="k">to</span> <span class="p">(</span><span class="mi">7</span> <span class="o">-</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-<span class="mi">8</span> <span class="o">*</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">2</span> <span class="k">is</span> <span class="n">equivalent</span> <span class="k">to</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span>
-<span class="mi">8</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">/</span> <span class="mi">2</span> <span class="k">is</span> <span class="n">equivalent</span> <span class="k">to</span> <span class="p">(</span><span class="mi">8</span> <span class="o">/</span> <span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-</code></pre></div>
-
-
-<p><strong>语法图如下：</strong></p>
-<p><img alt="img" src="https://ruslanspivak.com/lsbasi-part5/lsbasi_part5_grammar.png"></p>
-<p><strong>运算优先级关系如下：</strong></p>
-<p><img alt="img" src="https://ruslanspivak.com/lsbasi-part5/lsbasi_part5_exprdecomp.png"></p>
-<p><strong>源代码如下：</strong></p>
-<div class="highlight"><pre><span></span><code><span class="c1"># Token types</span>
-<span class="c1">#</span>
-<span class="c1"># EOF (end-of-file) token is used to indicate that</span>
-<span class="c1"># there is no more input left for lexical analysis</span>
-<span class="n">INTEGER</span><span class="p">,</span> <span class="n">PLUS</span><span class="p">,</span> <span class="n">MINUS</span><span class="p">,</span> <span class="n">MUL</span><span class="p">,</span> <span class="n">DIV</span><span class="p">,</span> <span class="n">EOF</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s1">&#39;INTEGER&#39;</span><span class="p">,</span> <span class="s1">&#39;PLUS&#39;</span><span class="p">,</span> <span class="s1">&#39;MINUS&#39;</span><span class="p">,</span> <span class="s1">&#39;MUL&#39;</span><span class="p">,</span> <span class="s1">&#39;DIV&#39;</span><span class="p">,</span> <span class="s1">&#39;EOF&#39;</span>
-<span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Token</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="c1"># token type: INTEGER, PLUS, MINUS, MUL, DIV, or EOF</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="nb">type</span>
-        <span class="c1"># token value: non-negative integer value, &#39;+&#39;, &#39;-&#39;, &#39;*&#39;, &#39;/&#39;, or None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
-
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;String representation of the class instance.</span>
-
-<span class="sd">        Examples:</span>
-<span class="sd">            Token(INTEGER, 3)</span>
-<span class="sd">            Token(PLUS, &#39;+&#39;)</span>
-<span class="sd">            Token(MUL, &#39;*&#39;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="s1">&#39;Token(</span><span class="si">{type}</span><span class="s1">, </span><span class="si">{value}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
-            <span class="n">value</span><span class="o">=</span><span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
-
-
-<span class="k">class</span> <span class="nc">Lexer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
-        <span class="c1"># client string input, e.g. &quot;3 * 5&quot;, &quot;12 / 3 * 4&quot;, etc</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">text</span>
-        <span class="c1"># self.pos is an index into self.text</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Invalid character&#39;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">advance</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Advance the `pos` pointer and set the `current_char` variable.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Indicates end of input</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pos</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">skip_whitespace</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isspace</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">integer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Return a (multidigit) integer consumed from the input.&quot;&quot;&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">get_next_token</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Lexical analyzer (also known as scanner or tokenizer)</span>
-
-<span class="sd">        This method is responsible for breaking a sentence</span>
-<span class="sd">        apart into tokens. One token at a time.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isspace</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">skip_whitespace</span><span class="p">()</span>
-                <span class="k">continue</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
-                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">INTEGER</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">integer</span><span class="p">())</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;+&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">PLUS</span><span class="p">,</span> <span class="s1">&#39;+&#39;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;-&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">MINUS</span><span class="p">,</span> <span class="s1">&#39;-&#39;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">MUL</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_char</span> <span class="o">==</span> <span class="s1">&#39;/&#39;</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">advance</span><span class="p">()</span>
-                <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">DIV</span><span class="p">,</span> <span class="s1">&#39;/&#39;</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">Token</span><span class="p">(</span><span class="n">EOF</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Interpreter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lexer</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lexer</span> <span class="o">=</span> <span class="n">lexer</span>
-        <span class="c1"># set current token to the first token taken from the input</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lexer</span><span class="o">.</span><span class="n">get_next_token</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">error</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s1">&#39;Invalid syntax&#39;</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">eat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token_type</span><span class="p">):</span>
-        <span class="c1"># compare the current token type with the passed token</span>
-        <span class="c1"># type and if they match then &quot;eat&quot; the current token</span>
-        <span class="c1"># and assign the next token to the self.current_token,</span>
-        <span class="c1"># otherwise raise an exception.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">token_type</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lexer</span><span class="o">.</span><span class="n">get_next_token</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">error</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">factor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;factor : INTEGER&quot;&quot;&quot;</span>
-        <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">INTEGER</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">token</span><span class="o">.</span><span class="n">value</span>
-
-    <span class="k">def</span> <span class="nf">term</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;term : factor ((MUL | DIV) factor)*&quot;&quot;&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
-
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">MUL</span><span class="p">,</span> <span class="n">DIV</span><span class="p">):</span>
-            <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span>
-            <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MUL</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">MUL</span><span class="p">)</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">DIV</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">DIV</span><span class="p">)</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">factor</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">result</span>
-
-    <span class="k">def</span> <span class="nf">expr</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Arithmetic expression parser / interpreter.</span>
-
-<span class="sd">        calc&gt;  14 + 2 * 3 - 6 / 2</span>
-<span class="sd">        17</span>
-
-<span class="sd">        expr   : term ((PLUS | MINUS) term)*</span>
-<span class="sd">        term   : factor ((MUL | DIV) factor)*</span>
-<span class="sd">        factor : INTEGER</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
-
-        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">PLUS</span><span class="p">,</span> <span class="n">MINUS</span><span class="p">):</span>
-            <span class="n">token</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_token</span>
-            <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">PLUS</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">PLUS</span><span class="p">)</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
-            <span class="k">elif</span> <span class="n">token</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="n">MINUS</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">eat</span><span class="p">(</span><span class="n">MINUS</span><span class="p">)</span>
-                <span class="n">result</span> <span class="o">=</span> <span class="n">result</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">term</span><span class="p">()</span>
-
-        <span class="k">return</span> <span class="n">result</span>
-
-
-<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
-    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># To run under Python3 replace &#39;raw_input&#39; call</span>
-            <span class="c1"># with &#39;input&#39;</span>
-            <span class="n">text</span> <span class="o">=</span> <span class="n">raw_input</span><span class="p">(</span><span class="s1">&#39;calc&gt; &#39;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">EOFError</span><span class="p">:</span>
-            <span class="k">break</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">lexer</span> <span class="o">=</span> <span class="n">Lexer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="n">interpreter</span> <span class="o">=</span> <span class="n">Interpreter</span><span class="p">(</span><span class="n">lexer</span><span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">interpreter</span><span class="o">.</span><span class="n">expr</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
-
-
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">main</span><span class="p">()</span>
-</code></pre></div>
-
-
-<p><strong>运行结果会话如下：</strong></p>
-<div class="highlight"><pre><span></span><code><span class="err">$</span> <span class="n">python</span> <span class="n">calc5</span><span class="o">.</span><span class="n">py</span>
-<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">3</span>
-<span class="mi">3</span>
-<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">7</span> <span class="o">*</span> <span class="mi">4</span>
-<span class="mi">30</span>
-<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">7</span> <span class="o">-</span> <span class="mi">8</span> <span class="o">/</span> <span class="mi">4</span>
-<span class="mi">5</span>
-<span class="n">calc</span><span class="o">&gt;</span> <span class="mi">14</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="mi">3</span> <span class="o">-</span> <span class="mi">6</span> <span class="o">/</span> <span class="mi">2</span>
-<span class="mi">17</span>
-</code></pre></div>
-
-
-<p>从本节开始代码支持python3版本了，你可以自己运行尝试一下。</p>
+        <div><p>​   <strong>什么是进程：</strong></p>
 <blockquote>
-<p>一鲸落，万物生。</p>
-<p>当一头巨鲸死去的时候，它的尸体会沉入海底，生物学家赋予这个过程为鲸落，巨鲸的尸体可以供养一套分解者为主的循环系统长达百年。</p>
-<p>巨鲸的尸体被上万个生物吃掉，在海底诞生了独特的生态圈，甚至能够诞生新的物种，一即是全，全即是一。</p>
+<p>进程（Process）是计算机中的程序关于某数据集合上的一次运行活动，是系统进行资源分配和调度的基本单位，是<a href="https://baike.baidu.com/item/操作系统">操作系统</a>结构的基础。在早期面向进程设计的计算机结构中，进程是程序的基本执行实体；在当代面向线程设计的计算机结构中，进程是线程的容器。程序是指令、数据及其组织形式的描述，进程是程序的实体。</p>
 </blockquote>
-<p>​   虽然第一台电子计算从诞生至今也不过百年，但是一鲸落而万物生，计算机俨然催生了很多兴盛的领域。如互联网，人工智能，移动互联网等等，就算是我现在能在互联网的AI公司谋求一份温饱工作也算是蹭了红利。当然事物是具有两面性的，有好的一面自然有坏的一面，越来越多的工科学生投机进入CS的热门领域，想要赚大钱，虽然初衷对个人没什么问题，但是人数的增加让就业的压力陡然增加，这点靠个人也做不了什么，希望行业以后会越来越好吧。我写这个教程其实也是在复读别人的博客，只是想找一个地方整理下脑子里的印象。最后祝愿大家早日脱单并且财富自由，找到喜欢的事情做，拜拜。</p></div>
+<p>​   <strong>什么是多进程：</strong></p>
+<blockquote>
+<p>python中的多线程其实并不是真正的多线程，如果想要充分地使用多核CPU的资源，在python中大部分情况需要使用多进程。Python提供了非常好用的多进程包multiprocessing，只需要定义一个函数，Python会完成其他所有事情。借助这个包，可以轻松完成从单进程到<strong>并发执行</strong>的转换。multiprocessing支持子进程、通信和共享数据、执行不同形式的同步，提供了Process、Queue、Pipe、Lock等组件。</p>
+</blockquote>
+<p>​   <strong>什么是线程：</strong></p>
+<blockquote>
+<p><strong>线程</strong>（英语：thread）是<a href="https://baike.baidu.com/item/操作系统">操作系统</a>能够进行运算<a href="https://baike.baidu.com/item/调度">调度</a>的最小单位。它被包含在<a href="https://baike.baidu.com/item/进程">进程</a>之中，是<a href="https://baike.baidu.com/item/进程">进程</a>中的实际运作单位。一条线程指的是<a href="https://baike.baidu.com/item/进程">进程</a>中一个单一顺序的控制流，一个进程中可以并发多个线程，每条线程并行执行不同的任务。在Unix System V及<a href="https://baike.baidu.com/item/SunOS">SunOS</a>中也被称为轻量进程（lightweight processes），但轻量进程更多指内核线程（kernel thread），而把用户线程（user thread）称为线程。</p>
+</blockquote>
+<p>​   <strong>什么是多线程：</strong></p>
+<blockquote>
+<p>​ 多线程类似于同时执行多个不同程序，多线程运行有如下优点：</p>
+<ul>
+<li>
+<p>使用线程可以把占据长时间的程序中的任务放到后台去处理。</p>
+</li>
+<li>
+<p>用户界面可以更加吸引人，这样比如用户点击了一个按钮去触发某些事件的处理，可以弹出一个进度条来显示处理的进度</p>
+</li>
+<li>
+<p>程序的运行速度可能加快</p>
+</li>
+<li>
+<p>在一些等待的任务实现上如用户输入、文件读写和网络收发数据等，线程就比较有用了。在这种情况下我们可以释放一些珍贵的资源如内存占用等等。</p>
+</li>
+</ul>
+<p><strong>线程在执行过程中与进程还是有区别的。每个独立的进程有一个程序运行的入口、顺序执行序列和程序的出口。但是线程不能够独立执行，必须依存在应用程序中，由应用程序提供多个线程执行控制。</strong></p>
+<p>每个线程都有他自己的一组CPU寄存器，称为线程的上下文，该上下文反映了线程上次运行该线程的CPU寄存器的状态。</p>
+<p>指令指针和堆栈指针寄存器是线程上下文中两个最重要的寄存器，线程总是在进程得到上下文中运行的，这些地址都用于标志拥有线程的进程地址空间中的内存。</p>
+<ul>
+<li>
+<p>线程可以被<strong>抢占（中断）</strong>。</p>
+</li>
+<li>
+<p>在其他线程正在运行时，线程可以暂时搁置（也称为睡眠） -- 这就是线程的退让</p>
+</li>
+</ul>
+</blockquote>
+<p>​   <strong>什么是协程：</strong></p>
+<blockquote>
+<p>协程与<a href="https://baike.baidu.com/item/子例程/8231923">子例程</a>一样，协程（coroutine）也是一种程序组件。相对子例程而言，协程更为一般和灵活，但在实践中使用没有子例程那样广泛。协程源自 Simula 和 Modula-2 语言，但也有其他语言支持。协程不是进程或线程，其执行过程更类似于子例程，或者说不带返回值的<a href="https://baike.baidu.com/item/函数调用/4127405">函数调用</a>。</p>
+</blockquote>
+<p>​   这些手段可以方便我们提升程序的性能。</p>
+<p><strong>对比实验：</strong></p>
+<p>资料显示，如果多线程的进程是<strong>CPU密集型</strong>的，那多线程并不能有多少效率上的提升，相反还可能会因为线程的频繁切换，导致效率下降，推荐使用多进程；如果是<strong>IO密集型</strong>，多线程进程可以利用IO阻塞等待时的空闲时间执行其他线程，提升效率。所以我们根据实验对比不同场景的效率</p>
+<p><strong>导包：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Thread</span>
+<span class="kn">from</span> <span class="nn">multiprocessing</span> <span class="kn">import</span> <span class="n">Process</span>
+</code></pre></div>
+
+
+<p><strong>定义CPU密集的程序：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="c1"># 使程序完成50万计算</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">while</span> <span class="n">c</span> <span class="o">&lt;</span> <span class="mi">500000</span><span class="p">:</span>
+        <span class="n">c</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">x</span> <span class="o">+=</span> <span class="n">x</span>
+        <span class="n">y</span> <span class="o">+=</span> <span class="n">y</span>
+</code></pre></div>
+
+
+<p><strong>定义IO密集的程序：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">write</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;test.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5000000</span><span class="p">):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;testwrite</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<span class="k">def</span> <span class="nf">read</span><span class="p">():</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;test.txt&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">readlines</span><span class="p">()</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div>
+
+
+<p><strong>定义网络请求程序：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="n">_head</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;User-Agent&#39;</span><span class="p">:</span> <span class="s1">&#39;Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36&#39;</span><span class="p">}</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">&quot;http://www.tieba.com&quot;</span>
+<span class="k">def</span> <span class="nf">http_request</span><span class="p">():</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">webPage</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">_head</span><span class="p">)</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="n">webPage</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;context&quot;</span><span class="p">:</span> <span class="n">html</span><span class="p">}</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">e</span><span class="p">}</span>
+</code></pre></div>
+
+
+<p><strong>单线程执行上述程序的性能测试：</strong></p>
+<div class="highlight"><pre><span></span><code><span class="c1"># CPU密集操作</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Line cpu&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span>
+<span class="c1"># IO密集操作</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">write</span><span class="p">()</span>
+    <span class="n">read</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Line IO&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span>
+<span class="c1"># 网络请求密集型操作</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">):</span>
+    <span class="n">http_request</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Line Http Request&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">)</span>
+</code></pre></div>
+
+
+<p><strong>输出：</strong></p>
+<ul>
+<li>CPU密集：95.6059999466、91.57099986076355 92.52800011634827、 99.96799993515015</li>
+<li>IO密集：24.25、21.76699995994568、21.769999980926514、22.060999870300293</li>
+<li>网络请求密集型: 4.519999980926514、8.563999891281128、4.371000051498413、4.522000074386597、14.671000003814697</li>
+</ul>
+<p><strong>对比分析：</strong></p>
+<table>
+<thead>
+<tr>
+<th align="left"></th>
+<th align="left">CPU密集型操作</th>
+<th align="left">IO密集型操作</th>
+<th>网络请求密集型操作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">线性操作</td>
+<td align="left">94.91824996469</td>
+<td align="left">22.46199995279</td>
+<td>7.3296000004</td>
+</tr>
+<tr>
+<td align="left">多线程操作</td>
+<td align="left">101.1700000762</td>
+<td align="left">24.8605000973</td>
+<td>0.5053332647</td>
+</tr>
+<tr>
+<td align="left">多进程操作</td>
+<td align="left">53.8899999857</td>
+<td align="left">12.7840000391</td>
+<td>0.5045000315</td>
+</tr>
+</tbody>
+</table>
+<p><strong>结论</strong>：</p>
+<p>多进程对于CPU密集操作有比较有效的优化，而多线程似乎对于IO密集操作并没有多大提升。其实原因在于cpython的GIL锁使得一个CPU同一时间只有一个线程在运行，否则理论上多线程会使得IO密集操作提升较为大的性能。</p>
+<hr>
+<blockquote>
+<p>绝对不能用患病的、意识不清的爱来爱你自己，一个人首先要学会爱自己，以健康和正常的爱来爱自己。这样一个人才能与自己安然相处，而不是在外飘荡。</p>
+</blockquote></div>
         <hr />
     </div>
 		
+
+ 
+        
+
+ 
+
+    <div class='article'>
+        <a href="https://kuikui.tech/simple-interpreter-05.html"><h2>Let’s Build A Slmple Interpreter. Part 5.</h2></a>
+        <div class= "well small"> Sun 28 June 2020
+
+by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
+ 
+
+
+ </div>
+        <div class="summary"><p>当遇到一件比较困难的事情的时候我们是如何解决的呢？ 处理复杂问题需要十分强的抽丝剥茧的能力。</p> <a class="btn btn-info xsmall" href="https://kuikui.tech/simple-interpreter-05.html">read more</a></div>
+    </div>	
+				
 
  
         
@@ -357,24 +301,6 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
         <div class="summary"><p>放一些刷题的思路和解法。</p> <a class="btn btn-info xsmall" href="https://kuikui.tech/leetcode-python.html">read more</a></div>
     </div>	
 				
-
- 
-        
-
- 
-
-    <div class='article'>
-        <a href="https://kuikui.tech/simple-interpreter-02.html"><h2>Let’s Build A Simple Interpreter. Part 2.</h2></a>
-        <div class= "well small"> Wed 17 June 2020
-
-by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
- 
-
-
- </div>
-        <div class="summary"><p>如果我們只學習一些方法，我們會受困于一些方法。但是如果你學習一些理論，你就能重構自己的方法。</p> <a class="btn btn-info xsmall" href="https://kuikui.tech/simple-interpreter-02.html">read more</a></div>
-    </div>	
-				
 <div class="pagination">
 <ul>
     <li class="prev disabled"><a href="#">&larr; Previous</a></li>
@@ -418,6 +344,7 @@ by <a class="url fn" href="https://kuikui.tech/author/kizzy.html">kizzy</a>
                 <li><a href="https://kuikui.tech/category/gan-xiang-yu-ji-lu.html">感想与记录</a></li>
                 <li><a href="https://kuikui.tech/category/ji-qi-xue-xi.html">机器学习</a></li>
                 <li><a href="https://kuikui.tech/category/lei-bie.html">类别</a></li>
+                <li><a href="https://kuikui.tech/category/python.html">python</a></li>
                 <li><a href="https://kuikui.tech/category/shua-ti-bi-ji.html">刷题笔记</a></li>
                 <li><a href="https://kuikui.tech/category/sui-xiang.html">随想</a></li>
                 <li><a href="https://kuikui.tech/category/yue-du-bi-ji.html">阅读笔记</a></li>
